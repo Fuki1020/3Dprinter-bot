@@ -121,13 +121,13 @@ client.once(Events.ClientReady, async () => {
                 .setCustomId("open_form")
                 .setLabel("申請する")
                 .setStyle(ButtonStyle.Success)
-                .setEmoji("🖨️");
+                //.setEmoji("🖨️");
 
             const checkButton = new ButtonBuilder()
                 .setCustomId("check_stocks_instant")
-                .setLabel("在庫を確認")
+                .setLabel("在庫確認")
                 .setStyle(ButtonStyle.Secondary)
-                .setEmoji("🔍");
+                //.setEmoji("🔍");
 
             const row = new ActionRowBuilder().addComponents(applyButton, checkButton);
             const messages = await applyChannel.messages.fetch({ limit: 10 });
@@ -150,13 +150,13 @@ client.once(Events.ClientReady, async () => {
                 .setCustomId("manage_stocks_menu")
                 .setLabel("在庫の追加・編集")
                 .setStyle(ButtonStyle.Primary)
-                .setEmoji("🔧");
+                //.setEmoji("🔧");
 
             const checkButton = new ButtonBuilder()
                 .setCustomId("check_stocks_instant")
-                .setLabel("現在の量を確認")
+                .setLabel("在庫確認")
                 .setStyle(ButtonStyle.Secondary)
-                .setEmoji("🔍");
+                //.setEmoji("🔍");
 
             const row = new ActionRowBuilder().addComponents(manageButton, checkButton);
             const messages = await stockChannel.messages.fetch({ limit: 10 });
@@ -297,7 +297,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
             const manualButton = new ButtonBuilder()
                 .setCustomId(`stockopt_manual_${targetKey}`)
-                .setLabel("✏️ 重量を微調整・上書き / 削除")
+                .setLabel("重量を微調整・上書き / 削除")
                 .setStyle(ButtonStyle.Secondary);
 
             const row = new ActionRowBuilder().addComponents(addOneButton, removeOneButton, manualButton);
@@ -362,7 +362,7 @@ client.on(Events.InteractionCreate, async interaction => {
             if (action === "manual") {
                 const modal = new ModalBuilder()
                     .setCustomId(`stockmanualmodal_${targetKey}`)
-                    .setTitle("✏️ 重量の微調整・上書き");
+                    .setTitle("重量の微調整・上書き");
 
                 const qtyInput = new TextInputBuilder()
                     .setCustomId("manual_qty")
@@ -422,7 +422,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
 
                 const stocks = readData(FILAMENT_FILE, {});
-                let logText = `利用清算処理が完了しました。このメッセージはあなたにのみ表示されています。`;
+                let logText = `利用清算処理が完了しました。`;
                 let scheduleClearText = `🛑 **利用終了・清算完了**\n【予約ID】${requestId}\n【ユーザー】<@${interaction.user.id}>`;
 
                 if (stocks[filamentKey] !== undefined) {
@@ -575,7 +575,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 ]);
 
             await interaction.update({
-                content: "🖨️ 使用する**3Dプリンタ**を選択してください",
+                content: "使用する**3Dプリンタ**を選択してください",
                 components: [new ActionRowBuilder().addComponents(printerSelect)]
             });
             return;
@@ -671,7 +671,7 @@ client.on(Events.InteractionCreate, async interaction => {
             });
             writeData(RESERVATION_FILE, reservations);
 
-            await interaction.update({ content: "🎉 予約が確定しました！", components: [] });
+            await interaction.update({ content: "予約が確定しました！", components: [] });
 
             delete client.tempData[interaction.user.id];
         }
