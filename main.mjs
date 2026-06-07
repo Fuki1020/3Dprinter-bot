@@ -104,7 +104,7 @@ function createStockEmbed() {
 }
 
 // -----------------------------
-// 起動時
+// 起動時（重複・増殖防止・完全強化版）
 // -----------------------------
 client.once(Events.ClientReady, async () => {
     console.log(`ログインしました: ${client.user.tag}`);
@@ -116,62 +116,72 @@ client.once(Events.ClientReady, async () => {
         
         // ① 3Dプリンタ利用申請チャンネルの設定
         const applyChannel = channels.find(ch => ch?.name === "🖨️｜3dプリンタ利用");
-        if (applyChannel) {
+        if (applyChannel && applyChannel.isTextBased()) {
             const applyButton = new ButtonBuilder()
                 .setCustomId("open_form")
                 .setLabel("申請する")
-                .setStyle(ButtonStyle.Success)
-                //.setEmoji("🖨️");
+                .setStyle(ButtonStyle.Success);
 
             const checkButton = new ButtonBuilder()
                 .setCustomId("check_stocks_instant")
                 .setLabel("在庫確認")
-                .setStyle(ButtonStyle.Secondary)
-                //.setEmoji("🔍");
+                .setStyle(ButtonStyle.Secondary);
 
             const row = new ActionRowBuilder().addComponents(applyButton, checkButton);
-            const messages = await applyChannel.messages.fetch({ limit: 10 });
-            const oldMsg = messages.find(msg => msg.author.id === client.user.id && msg.content.includes("🖨️ 3dプリンタ利用申請"));
+            
+            // 🔍 確実に過去のメッセージを見つけるために取得件数を100件に増やします
+            const messages = await applyChannel.messages.fetch({ limit: 100 });
+            
+            // 🔍 条件をシンプルに「このボットが送信した、かつ『3Dプリンタ利用申請』という文字列が含まれる」に変更
+            const oldMsg = messages.find(msg => 
+                msg.author.id === client.user.id && 
+                msg.content.includes("3Dプリンタ利用申請")
+            );
 
             if (oldMsg) {
+                // すでにメッセージがある場合は、ボタン（components）を最新状態に更新するだけ
                 await oldMsg.edit({ components: [row] });
+                console.log("🖨️ 3Dプリンタ申請ボタンは既に存在するため、既存メッセージを更新しました。");
             } else {
+                // メッセージが過去100件の中に1件もない場合だけ新しく送信する
                 await applyChannel.send({
                     content: "🖨️ 3Dプリンタ利用申請\nボタンから申請してください。",
                     components: [row]
                 });
+                console.log("🖨️ 3Dプリンタ申請ボタンを新しく設置しました。");
             }
         }
 
         // ② フィラメント管理チャンネルの設定
         const stockChannel = channels.find(ch => ch?.name === "🛠️｜フィラメント管理");
-        if (stockChannel) {
+        if (stockChannel && stockChannel.isTextBased()) {
             const manageButton = new ButtonBuilder()
                 .setCustomId("manage_stocks_menu")
                 .setLabel("在庫の追加・編集")
-                .setStyle(ButtonStyle.Primary)
-                //.setEmoji("🔧");
+                .setStyle(ButtonStyle.Primary);
 
             const checkButton = new ButtonBuilder()
                 .setCustomId("check_stocks_instant")
                 .setLabel("在庫確認")
-                .setStyle(ButtonStyle.Secondary)
-                //.setEmoji("🔍");
+                .setStyle(ButtonStyle.Secondary);
 
             const row = new ActionRowBuilder().addComponents(manageButton, checkButton);
-            const messages = await stockChannel.messages.fetch({ limit: 10 });
+            
+            // 🔍 こちらも取得件数を100件に拡張
+            const messages = await stockChannel.messages.fetch({ limit: 100 });
             const stockMsg = messages.find(msg => msg.author.id === client.user.id && msg.embeds[0]?.title === "📦 フィラメント在庫一覧");
 
             const currentEmbed = createStockEmbed();
             if (stockMsg) {
                 await stockMsg.edit({ embeds: [currentEmbed], components: [row] });
+                console.log("📦 フィラメント在庫一覧は既に存在するため、パネルを更新しました。");
             } else {
                 await stockChannel.send({ embeds: [currentEmbed], components: [row] });
+                console.log("📦 フィラメント在庫一覧を新しく設置しました。");
             }
         }
     }
 });
-
 // ==============================
 // Interaction (ボタン / モーダル / セレクトメニュー)
 // ==============================
