@@ -387,24 +387,49 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         // --------------------------
-        // 微調整モーダルの送信処理
+        // 微調整モーダルの送信処理（ここを書き換えます）
         // --------------------------
         if (interaction.isModalSubmit() && interaction.customId.startsWith("stockmanualmodal_")) {
             const targetKey = interaction.customId.split('_')[1];
-            const rawQty = parseInt(interaction.fields.getTextInputValue("manual_qty"));
+    
+            // 入力されたグラム数（例: 500）
+            const inputQty = parseInt(interaction.fields.getTextInputValue("manual_qty"), 10);
+
+            if (isNaN(inputQty)) {
+                await interaction.reply({ content: "❌ 正しい数値を入力してください。", ephemeral: true });
+                return;
+            }
 
             const stocks = readData(FILAMENT_FILE, {});
+            // 現在の在庫を取得（データがなければ0gとする）
+            const currentWeight = stocks[targetKey] || 0;
 
-            if (rawQty === 0 || isNaN(rawQty)) {
+            if (inputQty === 0) {
+                // 「0」が入力された場合はデータを完全に削除
                 delete stocks[targetKey];
                 writeData(FILAMENT_FILE, stocks);
                 await interaction.reply({ content: `🗑️ **${targetKey}** を在庫一覧から削除しました。`, ephemeral: true });
             } else {
-                stocks[targetKey] = rawQty;
-                writeData(FILAMENT_FILE, stocks);
-                await interaction.reply({ content: `✅ **${targetKey}** の総重量を **${rawQty}g** に変更・上書きしました。`, ephemeral: true });
+                // 🔥【ここが重要】「上書き」ではなく「現在の在庫 ＋ 入力値」にする
+                const newWeight = currentWeight + inputQty;
+
+                if (newWeight <= 0) {
+                    // 計算して0以下になる場合はデータを削除
+                    delete stocks[targetKey];
+                    writeData(FILAMENT_FILE, stocks);
+                    await interaction.reply({ content: `🗑️ 計算後の総重量が0g以下になったため、**${targetKey}** を一覧から削除しました。`, ephemeral: true });
+                } else {
+                    // 計算後の合計値を保存
+                    stocks[targetKey] = newWeight;
+                    writeData(FILAMENT_FILE, stocks);
+                    await interaction.reply({ 
+                        content: `✅ **${targetKey}** に **${inputQty}g** を追加しました！\n(元の在庫: ${currentWeight}g ➔ 変更後の総重量: **${newWeight}g** )`, 
+                        ephemeral: true 
+                    });
+                }
             }
 
+            // パネルの在庫一覧表示を更新する処理
             const channels = await interaction.guild.channels.fetch();
             const stockChannel = channels.find(ch => ch?.name === "🛠️｜フィラメント管理");
             if (stockChannel) {
